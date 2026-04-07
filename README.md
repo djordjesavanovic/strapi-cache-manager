@@ -31,7 +31,7 @@ When an editor triggers a purge:
 1. The admin UI calls one of the plugin's server-side routes, authenticated via the Strapi admin JWT.
 2. The server fetches the content entry from Strapi's document service to get its field values (slug, etc.).
 3. The cache service resolves which frontend URL paths need purging, using the **content type mapping** defined in config.
-4. For each resolved path, the service calls the configured **provider endpoints** over HTTP — in this project, Varnish's `/varnish-purge` and `/varnish-ban` endpoints.
+4. For each resolved path, the service calls the configured **provider endpoints** over HTTP — for example, Varnish's `/varnish-purge` and `/varnish-ban` endpoints.
 5. Results are aggregated and returned. The `success` field reflects whether at least one provider call succeeded.
 
 ### Content Type → URL Path Resolution
@@ -39,10 +39,10 @@ When an editor triggers a purge:
 The `contentTypeMapping` config tells the plugin how to translate a Strapi content type entry into frontend URL paths. For example:
 
 ```
-api::article.article + { slug: "my-article" }
-  → pathPattern "/news/{slug}"  →  "/news/my-article"
-  → relatedPaths               →  "/news", "/"
-  → purge: ["/news/my-article", "/news", "/"]
+api::post.post + { slug: "my-post" }
+  → pathPattern "/blog/{slug}"  →  "/blog/my-post"
+  → relatedPaths               →  "/blog", "/"
+  → purge: ["/blog/my-post", "/blog", "/"]
 ```
 
 The `{fieldName}` placeholder in `pathPattern` is replaced with the actual value of that field from the entry. Any top-level entry field can be used — `{slug}`, `{locale}`, `{id}`, etc.
@@ -66,40 +66,42 @@ Together they provide thorough cache invalidation: `purge` handles the immediate
 
 - Strapi 5.x
 - Node 22+
-- pnpm (monorepo setup)
+- pnpm
 
-### Step 1 — Add to pnpm workspace
+### Step 1 — Add to pnpm workspace (monorepo)
+
+If you're using a pnpm monorepo, add the plugin directory to `pnpm-workspace.yaml`:
 
 ```yaml
 # pnpm-workspace.yaml
 packages:
-  - apps/*
-  - apps/cms/src/plugins/cache-manager/
+  - packages/*
+  - path/to/strapi-cms/src/plugins/cache-manager/
 ```
 
-Run `pnpm install` after adding it.
+Run `pnpm install` after adding it. If you installed via npm instead, skip this step.
 
-### Step 2 — Add build step to CMS scripts
+### Step 2 — Build the plugin
+
+```bash
+pnpm --filter cache-manager build
+# or, if installed via npm: the dist/ is already included in the package
+```
+
+To ensure the plugin is always built before the CMS starts, add it to your CMS `predev`/`prebuild` scripts:
 
 ```json
-// apps/cms/package.json
 {
   "scripts": {
-    "predev": "... && pnpm --filter cache-manager build",
-    "prebuild": "... && pnpm --filter cache-manager build"
+    "predev": "pnpm --filter cache-manager build",
+    "prebuild": "pnpm --filter cache-manager build"
   }
 }
 ```
 
-This ensures the plugin is always built before the CMS starts. You can also build it manually:
-
-```bash
-pnpm --filter cache-manager build
-```
-
 ### Step 3 — Configure the plugin
 
-In `apps/cms/config/plugins.ts`:
+In `config/plugins.ts`:
 
 ```typescript
 export default ({ env }) => ({
@@ -138,25 +140,18 @@ export default ({ env }) => ({
         },
       ],
       contentTypeMapping: {
-        'api::article.article': {
-          pathPattern: '/news/{slug}',
-          relatedPaths: ['/news', '/'],
+        'api::post.post': {
+          pathPattern: '/blog/{slug}',
+          relatedPaths: ['/blog', '/'],
         },
         'api::page.page': {
           pathPattern: '/{slug}',
         },
-        'api::player.player': {
-          pathPattern: '/player/{slug}',
-          relatedPaths: ['/player'],
-        },
-        'api::startpage.startpage': {
-          pathPattern: '/',
-        },
         'api::footer.footer': {
           purgeAllOnChange: true,
         },
-        'api::category.category': {
-          relatedPaths: ['/news'],
+        'api::tag.tag': {
+          relatedPaths: ['/blog'],
         },
       },
     },
@@ -167,17 +162,17 @@ export default ({ env }) => ({
 ### Step 4 — Set environment variables
 
 ```bash
-# apps/cms/.env
+# .env
 VARNISH_URL=http://localhost:6081       # local dev (Varnish exposed on port 6081)
 VARNISH_PURGE_TOKEN=your-secret-token  # must match the token Varnish is configured with
 ```
 
-In production (Docker), use `VARNISH_URL=http://varnish` (container name).
+In production (Docker), use `VARNISH_URL=http://varnish` (the container name).
 
 ### Step 5 — Start Strapi
 
 ```bash
-pnpm cms dev
+pnpm develop
 ```
 
 Navigate to **Settings > Cache Manager** to verify providers are showing.
@@ -241,15 +236,15 @@ pathParam: 'X-Purge-URL'
 
 ```typescript
 contentTypeMapping: {
-  'api::article.article': {
-    pathPattern: '/news/{slug}',     // {fieldName} replaced with entry field value
-    relatedPaths: ['/news', '/'],    // Additional paths purged alongside the entry path
+  'api::post.post': {
+    pathPattern: '/blog/{slug}',     // {fieldName} replaced with entry field value
+    relatedPaths: ['/blog', '/'],    // Additional paths purged alongside the entry path
   },
   'api::footer.footer': {
     purgeAllOnChange: true,          // Triggers purgeAll instead of path-based purge
   },
-  'api::category.category': {
-    relatedPaths: ['/news'],         // No pathPattern — only related paths are purged
+  'api::tag.tag': {
+    relatedPaths: ['/blog'],         // No pathPattern — only related paths are purged
   },
 }
 ```
@@ -263,9 +258,9 @@ contentTypeMapping: {
 **Field substitution examples:**
 
 ```
-pathPattern: '/news/{slug}'         + entry.slug = 'my-article'  →  '/news/my-article'
-pathPattern: '/{locale}/news/{slug}'+ entry.locale = 'en', entry.slug = 'hi'  →  '/en/news/hi'
-pathPattern: '/player/{slug}'       + entry.slug = 'john-doe'    →  '/player/john-doe'
+pathPattern: '/blog/{slug}'          + entry.slug = 'my-post'    →  '/blog/my-post'
+pathPattern: '/{locale}/blog/{slug}' + entry.locale = 'en', entry.slug = 'my-post'  →  '/en/blog/my-post'
+pathPattern: '/products/{slug}'      + entry.slug = 'my-product' →  '/products/my-product'
 ```
 
 Any top-level field on the Strapi entry can be used as a placeholder.
@@ -289,7 +284,7 @@ Resolution happens at **request time** (not at startup), so:
 
 ## Provider Configuration Examples
 
-### Varnish (this project)
+### Varnish
 
 Varnish accepts purge and ban via custom HTTP endpoints defined in `default.vcl`:
 
@@ -544,26 +539,25 @@ The plugin is currently **manual-only** — editors trigger purges. To add autom
 **Plugin doesn't appear in Settings:**
 
 - Check `enabled: true` and `resolve: './src/plugins/cache-manager'` in `config/plugins.ts`
-- Run `pnpm --filter cache-manager build` — the plugin must be built before Strapi can load it
+- Build the plugin — it must be compiled before Strapi can load it: `pnpm --filter cache-manager build`
 - Look for `[cache-manager]` messages in Strapi startup logs
 
 **"fetch failed" on purge:**
 
-- Varnish isn't running or isn't reachable at `VARNISH_URL`
-- In local dev: start Docker (`docker compose up -d`) and verify Varnish is up
-- Test directly: `curl -X POST http://localhost:6081/varnish-purge -H "X-Purge-Token: your-token" -H "X-Purge-URL: /"`
+- The cache provider isn't running or isn't reachable at the configured URL
+- In local dev: start Docker (`docker compose up -d`) and verify your cache service is up
+- Test the endpoint directly, e.g.: `curl -X POST http://localhost:6081/varnish-purge -H "X-Purge-Token: your-token" -H "X-Purge-URL: /"`
 
 **HTTP 403 on purge:**
 
-- `VARNISH_PURGE_TOKEN` in `apps/cms/.env` doesn't match the token Varnish was started with
-- Varnish reads its token from `VARNISH_PURGE_TOKEN` (or falls back to `PREVIEW_SECRET`) in the root `.env`
-- Restart the Varnish container after changing its token: `docker compose up -d --force-recreate varnish`
+- `VARNISH_PURGE_TOKEN` in your `.env` doesn't match the token your cache provider expects
+- Restart the container after changing the token: `docker compose up -d --force-recreate varnish`
 
 **"Invalid URL" on purge:**
 
-- `VARNISH_URL` is not set in `apps/cms/.env`
-- The URL resolves to an empty string, making `new URL('')` throw
-- Set `VARNISH_URL=http://localhost:6081` (local dev) or `http://varnish` (production Docker)
+- `VARNISH_URL` (or whichever URL env var you're using) is not set in your `.env`
+- The `${VAR_NAME}` interpolation resolves to an empty string, making `new URL('')` throw
+- Set it to the correct address, e.g. `http://localhost:6081` (local dev) or the container name in production
 
 **Document action not showing in edit view:**
 
