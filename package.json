@@ -13,13 +13,13 @@
     "cdn",
     "purge"
   ],
-  "homepage": "https://github.com/djordjesavanovic/strapi-plugin-cache-manager#readme",
+  "homepage": "https://github.com/djordjesavanovic/strapi-cache-manager#readme",
   "bugs": {
-    "url": "https://github.com/djordjesavanovic/strapi-plugin-cache-manager/issues"
+    "url": "https://github.com/djordjesavanovic/strapi-cache-manager/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/djordjesavanovic/strapi-plugin-cache-manager.git"
+    "url": "git+https://github.com/djordjesavanovic/strapi-cache-manager"
   },
   "license": "MIT",
   "author": "Djordje Savanovic",
