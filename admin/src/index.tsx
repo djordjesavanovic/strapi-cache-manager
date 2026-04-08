@@ -39,14 +39,24 @@ const PurgeCacheDocumentAction = (props: any) => {
       }),
       onConfirm: async () => {
         try {
-          await purgeEntry(model, documentId);
-          toggleNotification({
-            type: 'success',
-            message: formatMessage({
-              id: getTranslation('action.purge.success'),
-              defaultMessage: 'Cache purged successfully',
-            }),
-          });
+          const result = await purgeEntry(model, documentId);
+          if (result?.success === false) {
+            toggleNotification({
+              type: 'danger',
+              message: formatMessage({
+                id: getTranslation('action.purge.error'),
+                defaultMessage: 'Failed to purge cache',
+              }),
+            });
+          } else {
+            toggleNotification({
+              type: 'success',
+              message: formatMessage({
+                id: getTranslation('action.purge.success'),
+                defaultMessage: 'Cache purged successfully',
+              }),
+            });
+          }
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
           toggleNotification({
@@ -99,17 +109,27 @@ const PurgeCacheBulkAction = (props: any) => {
       ),
       onConfirm: async () => {
         try {
-          await purgeBulk(model, documentIds);
-          toggleNotification({
-            type: 'success',
-            message: formatMessage(
-              {
-                id: getTranslation('action.purge-bulk.success'),
-                defaultMessage: 'Cache purged for {count} entries',
-              },
-              { count: documentIds.length }
-            ),
-          });
+          const result = await purgeBulk(model, documentIds);
+          if (result?.success === false) {
+            toggleNotification({
+              type: 'danger',
+              message: formatMessage({
+                id: getTranslation('action.purge-bulk.error'),
+                defaultMessage: 'Failed to purge cache',
+              }),
+            });
+          } else {
+            toggleNotification({
+              type: 'success',
+              message: formatMessage(
+                {
+                  id: getTranslation('action.purge-bulk.success'),
+                  defaultMessage: 'Cache purged for {count} entries',
+                },
+                { count: documentIds.length }
+              ),
+            });
+          }
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
           toggleNotification({
