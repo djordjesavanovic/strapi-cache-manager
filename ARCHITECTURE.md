@@ -107,7 +107,7 @@ This means config changes in `plugins.ts` take effect on the next Strapi restart
 
 **File:** `server/src/services/cache-service.ts`
 
-The service is the core of the plugin. It is a factory function that receives `{ strapi }` and returns a plain object of methods (not a class). This follows the pattern used by the gameplan and hockeydata plugins in this repository.
+The service is the core of the plugin. It is a factory function that receives `{ strapi }` and returns a plain object of methods (not a class). This follows Strapi's standard service factory pattern.
 
 #### Exported Types
 
@@ -776,19 +776,17 @@ cache-manager.action.purge-bulk.*— Bulk action strings
 
 To use this plugin in a different Strapi 5 project:
 
-### Step 1: Copy the plugin
+### Step 1: Install the package
 
-Copy the entire `cache-manager/` directory into your project's `src/plugins/`.
-
-### Step 2: Add to workspace (if monorepo)
-
-```yaml
-# pnpm-workspace.yaml
-packages:
-  - src/plugins/cache-manager/
+```bash
+npm install @leancoders/strapi-plugin-cache-manager
+# or
+pnpm add @leancoders/strapi-plugin-cache-manager
+# or
+yarn add @leancoders/strapi-plugin-cache-manager
 ```
 
-### Step 3: Configure providers
+### Step 2: Configure providers
 
 Define providers that match your cache infrastructure. The plugin doesn't need to know what kind of cache you're using — only how to call its HTTP endpoints.
 
@@ -817,7 +815,7 @@ Define providers that match your cache infrastructure. The plugin doesn't need t
 
 This gives you a dashboard with a "Purge All" button. No per-entry purging (no `purge` endpoint), no stats.
 
-### Step 4: Add content type mapping (optional)
+### Step 3: Add content type mapping (optional)
 
 Only needed if you want per-entry purging. Map your content types to your frontend URL structure:
 
@@ -830,10 +828,9 @@ contentTypeMapping: {
 },
 ```
 
-### Step 5: Build and run
+### Step 4: Build and run
 
 ```bash
-pnpm --filter cache-manager build
 pnpm develop
 ```
 
@@ -844,8 +841,7 @@ pnpm develop
 ### Plugin doesn't appear in Settings
 
 - Verify `enabled: true` in `config/plugins.ts`
-- Verify `resolve` path is correct (relative to the CMS root)
-- Run `pnpm --filter cache-manager build` and restart Strapi
+- Verify the package is installed: `npm ls @leancoders/strapi-plugin-cache-manager`
 - Check the Strapi startup logs for `[cache-manager]` messages
 
 ### "No cache providers configured" warning

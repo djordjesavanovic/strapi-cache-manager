@@ -70,11 +70,11 @@ Together they provide thorough cache invalidation: `purge` handles the immediate
 ### Step 1 — Install
 
 ```bash
-npm install strapi-plugin-cache-manager
+npm install @leancoders/strapi-plugin-cache-manager
 # or
-pnpm add strapi-plugin-cache-manager
+pnpm add @leancoders/strapi-plugin-cache-manager
 # or
-yarn add strapi-plugin-cache-manager
+yarn add @leancoders/strapi-plugin-cache-manager
 ```
 
 ### Step 2 — Configure the plugin
@@ -561,8 +561,8 @@ The plugin is currently **manual-only** — editors trigger purges. To add autom
 
 **Plugin doesn't appear in Settings:**
 
-- Check `enabled: true` and `resolve: './src/plugins/cache-manager'` in `config/plugins.ts`
-- Build the plugin — it must be compiled before Strapi can load it: `pnpm --filter cache-manager build`
+- Check `enabled: true` in `config/plugins.ts`
+- Verify the package is installed: `npm ls @leancoders/strapi-plugin-cache-manager`
 - Look for `[cache-manager]` messages in Strapi startup logs
 
 **"fetch failed" on purge:**
