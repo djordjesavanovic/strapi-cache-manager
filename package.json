@@ -1,5 +1,5 @@
 {
-  "name": "strapi-plugin-cache-manager",
+  "name": "@leancoders/strapi-plugin-cache-manager",
   "version": "0.1.5",
   "description": "Strapi 5 plugin for managing and invalidating HTTP-based caches (Varnish, Redis proxy APIs, CDNs) directly from the admin UI",
   "keywords": [
@@ -13,16 +13,16 @@
     "cdn",
     "purge"
   ],
-  "homepage": "https://github.com/djordjesavanovic/strapi-cache-manager#readme",
+  "homepage": "https://github.com/Lean-Coders/strapi-cache-manager#readme",
   "bugs": {
-    "url": "https://github.com/djordjesavanovic/strapi-cache-manager/issues"
+    "url": "https://github.com/Lean-Coders/strapi-cache-manager/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/djordjesavanovic/strapi-cache-manager"
+    "url": "git+https://github.com/Lean-Coders/strapi-cache-manager"
   },
   "license": "MIT",
-  "author": "Djordje Savanovic",
+  "author": "Djordje Savanovic (LEAN-CODERS GmbH)",
   "type": "commonjs",
   "exports": {
     "./package.json": "./package.json",
