@@ -33,6 +33,7 @@ interface ContentTypeMappingEntry {
   pathPattern?: string;
   relatedPaths?: string[];
   purgeAllOnChange?: boolean;
+  tags?: string[];
 }
 
 interface StatsResult {
@@ -355,7 +356,7 @@ const Settings = () => {
                 })}
               </Alert>
             ) : (
-              <Table colCount={4} rowCount={Object.keys(mapping).length + 1}>
+              <Table colCount={5} rowCount={Object.keys(mapping).length + 1}>
                 <Thead>
                   <Tr>
                     <Th>
@@ -379,6 +380,14 @@ const Settings = () => {
                         {formatMessage({
                           id: getTranslation('settings.mapping-related-paths'),
                           defaultMessage: 'Also Purges',
+                        })}
+                      </Typography>
+                    </Th>
+                    <Th>
+                      <Typography variant="sigma">
+                        {formatMessage({
+                          id: getTranslation('settings.mapping-tags'),
+                          defaultMessage: 'Invalidation Tags',
                         })}
                       </Typography>
                     </Th>
@@ -422,6 +431,19 @@ const Settings = () => {
                             <Flex gap={1} wrap="wrap">
                               {config.relatedPaths.map((p) => (
                                 <Badge key={p}>{p}</Badge>
+                              ))}
+                            </Flex>
+                          ) : (
+                            <Typography textColor="neutral400">—</Typography>
+                          )}
+                        </Td>
+                        <Td>
+                          {config.tags && config.tags.length > 0 ? (
+                            <Flex gap={1} wrap="wrap">
+                              {config.tags.map((t) => (
+                                <Badge key={t} active={true}>
+                                  {t}
+                                </Badge>
                               ))}
                             </Flex>
                           ) : (

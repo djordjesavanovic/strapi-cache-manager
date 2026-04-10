@@ -7,6 +7,7 @@ export interface ProviderEndpoint {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   headers?: Record<string, string>;
   params?: Record<string, string>;
+  body?: Record<string, unknown>;
   pathParam?: string;
   pathLocation?: 'query' | 'header';
 }
@@ -18,6 +19,7 @@ export interface ProviderConfig {
     purge?: ProviderEndpoint;
     ban?: ProviderEndpoint;
     purgeAll?: ProviderEndpoint;
+    invalidateByTag?: ProviderEndpoint;
     stats?: ProviderEndpoint;
   };
 }
@@ -26,6 +28,7 @@ export interface ContentTypeMappingEntry {
   pathPattern?: string;
   relatedPaths?: string[];
   purgeAllOnChange?: boolean;
+  tags?: string[];
 }
 
 export interface PurgeResult {
@@ -114,10 +117,21 @@ const cacheService = ({ strapi }: { strapi: Core.Strapi }) => {
     return [...new Set(paths)];
   }
 
+  function resolveTagPatterns(contentTypeUid: string, entry: Record<string, unknown>): string[] {
+    const mapping = getContentTypeMapping();
+    const config = mapping[contentTypeUid];
+    if (!config?.tags || config.tags.length === 0) return [];
+
+    return config.tags
+      .map((tag) => tag.replace(/\{([^}]+)\}/g, (_, field) => String(entry[field] || '')))
+      .filter(Boolean);
+  }
+
   async function executeEndpoint(
     provider: ProviderConfig,
     endpointName: keyof ProviderConfig['endpoints'],
-    extraParams?: Record<string, string>
+    extraParams?: Record<string, string>,
+    bodyOverride?: Record<string, unknown>
   ): Promise<PurgeResult> {
     const endpoint = provider.endpoints[endpointName];
 
@@ -159,12 +173,15 @@ const cacheService = ({ strapi }: { strapi: Core.Strapi }) => {
         urlObj.searchParams.set(key, value);
       }
 
+      const body = bodyOverride ?? endpoint.body;
+
       const response = await fetch(urlObj.toString(), {
         method: endpoint.method,
         headers: {
           'Content-Type': 'application/json',
           ...headers,
         },
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       });
 
       const responseData = await response.json().catch(() => null);
@@ -230,6 +247,17 @@ const cacheService = ({ strapi }: { strapi: Core.Strapi }) => {
       }
     }
 
+    // Call invalidateByTag once per provider if tags are configured
+    const resolvedTags = resolveTagPatterns(contentTypeUid, entry);
+    if (resolvedTags.length > 0) {
+      for (const provider of providers) {
+        if (provider.endpoints.invalidateByTag) {
+          const tagBody = { ...provider.endpoints.invalidateByTag.body, tags: resolvedTags };
+          results.push(await executeEndpoint(provider, 'invalidateByTag', undefined, tagBody));
+        }
+      }
+    }
+
     return results;
   }
 
@@ -262,6 +290,22 @@ const cacheService = ({ strapi }: { strapi: Core.Strapi }) => {
         }
         if (provider.endpoints.ban) {
           results.push(await executeEndpoint(provider, 'ban', { path }));
+        }
+      }
+    }
+
+    // Collect and deduplicate tags across all entries, then call invalidateByTag once per provider
+    const allTags = new Set<string>();
+    for (const entry of entries) {
+      resolveTagPatterns(contentTypeUid, entry).forEach((t) => allTags.add(t));
+    }
+
+    if (allTags.size > 0) {
+      const resolvedTags = [...allTags];
+      for (const provider of providers) {
+        if (provider.endpoints.invalidateByTag) {
+          const tagBody = { ...provider.endpoints.invalidateByTag.body, tags: resolvedTags };
+          results.push(await executeEndpoint(provider, 'invalidateByTag', undefined, tagBody));
         }
       }
     }
@@ -310,6 +354,7 @@ const cacheService = ({ strapi }: { strapi: Core.Strapi }) => {
     getContentTypeMapping,
     getProviderSummary,
     resolvePaths,
+    resolveTagPatterns,
     executeEndpoint,
     purgeEntry,
     purgeBulk,

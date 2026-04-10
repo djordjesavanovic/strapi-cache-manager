@@ -28,6 +28,7 @@
   "cache-manager.settings.mapping-content-type": "Content Type",
   "cache-manager.settings.mapping-path-pattern": "Path Pattern",
   "cache-manager.settings.mapping-related-paths": "Also Purges",
+  "cache-manager.settings.mapping-tags": "Invalidation Tags",
   "cache-manager.settings.mapping-behavior": "Behavior",
   "cache-manager.settings.mapping-purge-all": "Purge All",
   "cache-manager.action.purge": "Purge Cache",

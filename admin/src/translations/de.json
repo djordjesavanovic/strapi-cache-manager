@@ -28,6 +28,7 @@
   "cache-manager.settings.mapping-content-type": "Content-Type",
   "cache-manager.settings.mapping-path-pattern": "Pfad-Muster",
   "cache-manager.settings.mapping-related-paths": "Auch leert",
+  "cache-manager.settings.mapping-tags": "Invalidierungs-Tags",
   "cache-manager.settings.mapping-behavior": "Verhalten",
   "cache-manager.settings.mapping-purge-all": "Alles leeren",
   "cache-manager.action.purge": "Cache leeren",
